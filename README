@@ -1,0 +1,44 @@
+The babeltrace-timings suite
+
+Use these scripts to visualize (patched) babeltrace's timings as measured with
+LTTng-UST. You'll need Perl and GNUplot.
+
+LTTng-UST is an open source software developed by EfficiOS Inc. See
+http://lttng.org for details.
+
+Here is how you can setup measurements environment:
+
+In one terminal:
+
+  export LTTNG_HOME=/tmp/lttng-home-spam
+  lttng-sessiond -d
+  lttng-relayd -d
+  lttng create trace-spam --live
+  lttng enable-event -u "spam:*"
+  lttng start
+  ./spam 100 300 # generate 100 events per second for 5 minutes
+
+In another terminal:
+
+  export LTTNG_HOME=/tmp/lttng-home-babeltrace
+  lttng-sessiond -d
+  lttng create trace-babeltrace
+  lttng enable-event -u "babeltrace:*"
+  lttng start
+  /tmp/babeltrace-1.5-dev/bin/babeltrace --input-format=lttng-live net://localhost/host/YOURHOSTNAME/trace-spam > /dev/null
+  # Press Ctrl-C after some time
+  lttng stop
+  lttng destroy
+  mv /tmp/lttng-home-babeltrace/lttng-traces/trace-babeltrace* /tmp/mytest-1
+
+  cd /tmp/mytest1
+  /tmp/babeltrace-timings.pl trace-babeltrace*
+  /tmp/babeltrace-timings.gp
+  # check generated PNG files
+
+
+It may also be useful to collect related TCP traffic. For example run this
+command as root:
+
+  tcpdump -nn -B 128000 -w lttng-live.pcap -i lo -s 65535 tcp port 5344
+
